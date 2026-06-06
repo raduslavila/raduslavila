@@ -659,59 +659,188 @@
   </div>
 
   <script>
-    /* ── PARTICLE NETWORK ── */
+    /* ── GRAIN MESH — Orleans Actor Network ── */
     const canvas = document.getElementById('particle-canvas');
     const ctx    = canvas.getContext('2d');
     let pts = [];
 
+    const MOBILE = () => window.innerWidth < 720;
+    const ACCENT = '62,255,208', ORANGE = '255,98,64', BLUE = '123,143,255';
+    let mouse = { x: -9999, y: -9999 };
+    let silos, grains, edgeNodes, agents, pulses;
+    let nextGrain, nextCascade, nextEdge, nextAgent, meshStarted = false;
+    const CD = 170;
+
     function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 
-    class Pt {
-      constructor() { this.reset(true); }
-      reset(init) {
-        this.x  = Math.random() * canvas.width;
-        this.y  = init ? Math.random() * canvas.height : (Math.random() < .5 ? -4 : canvas.height + 4);
-        this.vx = (Math.random() - .5) * .22;
-        this.vy = (Math.random() - .5) * .22;
-        this.r  = Math.random() * 1.2 + .4;
-        this.a  = Math.random() * .32 + .07;
+    function mkNode(x, y, type, speed) {
+      return { x, y, vx: (Math.random()-.5)*speed, vy: (Math.random()-.5)*speed,
+               type, glowT: 0, rippleT: -1, glowColor: ACCENT, silo: null };
+    }
+    function dst(a, b) { return Math.hypot(a.x-b.x, a.y-b.y); }
+    function nearest(from, list) {
+      if (!list || !list.length) return null;
+      let best = list[0], bestD = Infinity;
+      list.forEach(n => { const d = dst(from, n); if (d < bestD) { bestD = d; best = n; } });
+      return best;
+    }
+    function spawnPulse(from, to, color, delay) {
+      setTimeout(() => pulses.push({ from, to, t: 0, color, speed: 0.007 + Math.random() * 0.007 }), delay);
+    }
+    function activateGrain(g, color) {
+      color = color || ACCENT;
+      g.glowT = 1; g.rippleT = 0; g.glowColor = color;
+      grains.filter(n => n !== g && dst(g, n) < CD)
+            .sort((a, b) => dst(g, a) - dst(g, b))
+            .slice(0, 1 + Math.floor(Math.random() * 3))
+            .forEach((n, i) => spawnPulse(g, n, color, 180 + i * 220));
+    }
+    function cascadeSilo(silo) {
+      silo.glowT = 0.7; silo.rippleT = 0; silo.glowColor = ACCENT;
+      grains.filter(g => g.silo === silo).forEach((g, i) => setTimeout(() => activateGrain(g), i * 130));
+    }
+    function agentBurst(a) {
+      a.glowT = 1; a.rippleT = 0; a.glowColor = BLUE;
+      grains.filter(g => g !== a && dst(a, g) < 220).forEach((g, i) => spawnPulse(a, g, BLUE, i * 110));
+    }
+    function edgeTelemetry(e) {
+      e.glowT = 0.7; e.glowColor = ORANGE;
+      const g = nearest(e, grains); if (g) spawnPulse(e, g, ORANGE, 0);
+    }
+
+    function init() {
+      silos = []; grains = []; edgeNodes = []; agents = []; pulses = [];
+      const W = canvas.width, H = canvas.height, mob = MOBILE();
+      const SC = mob ? 3 : 5, GC = mob ? 14 : 28, EC = mob ? 4 : 7, SR = mob ? 110 : 150;
+
+      const cols = Math.ceil(Math.sqrt(SC * W / H)), rows = Math.ceil(SC / cols);
+      const cw = W / cols, ch = H / rows; let placed = 0;
+      outer: for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        if (placed >= SC) break outer;
+        silos.push(mkNode(cw*c + cw*.15 + Math.random()*cw*.7, ch*r + ch*.15 + Math.random()*ch*.7, 'silo', .06));
+        placed++;
       }
-      tick() {
-        this.x += this.vx; this.y += this.vy;
-        if (this.x < -10 || this.x > canvas.width + 10 ||
-            this.y < -10 || this.y > canvas.height + 10) this.reset(false);
+      for (let i = 0; i < GC; i++) {
+        const silo = silos[i % silos.length], angle = Math.random() * Math.PI * 2, d = SR*.25 + Math.random()*SR*.7;
+        const g = mkNode(Math.max(12, Math.min(W-12, silo.x + Math.cos(angle)*d)),
+                         Math.max(12, Math.min(H-12, silo.y + Math.sin(angle)*d)), 'grain', .18);
+        g.silo = silo; grains.push(g);
       }
-      draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(62,255,208,${this.a})`;
-        ctx.fill();
+      const aidx = new Set();
+      while (aidx.size < Math.min(2, grains.length)) aidx.add(Math.floor(Math.random() * grains.length));
+      aidx.forEach(i => { grains[i].type = 'agent'; grains[i].glowColor = BLUE; agents.push(grains[i]); });
+      for (let i = 0; i < EC; i++) {
+        const side = i % 4;
+        const e = mkNode(
+          side===0 ? Math.random()*W : side===1 ? Math.random()*W : side===2 ? 5+Math.random()*35 : W-5-Math.random()*35,
+          side===0 ? 5+Math.random()*35 : side===1 ? H-5-Math.random()*35 : Math.random()*H,
+          'edge', .04);
+        e.glowColor = ORANGE; edgeNodes.push(e);
+      }
+      pts = [...silos, ...edgeNodes, ...grains];
+      meshStarted = false;
+      setTimeout(() => {
+        grains.slice(0, 5).forEach((g, i) => setTimeout(() => activateGrain(g), i * 280));
+        if (silos.length) cascadeSilo(silos[0]);
+      }, 400);
+    }
+
+    function tickNode(n) {
+      const mdx = mouse.x - n.x, mdy = mouse.y - n.y, md = Math.hypot(mdx, mdy);
+      if (md < 100 && md > 0) { const f = (1-md/100)*.0015; n.vx += mdx*f; n.vy += mdy*f; }
+      if (n.silo) {
+        const hx = n.silo.x-n.x, hy = n.silo.y-n.y, hd = Math.hypot(hx, hy), SR = MOBILE()?110:150;
+        if (hd > SR*1.1 && hd > 0) { n.vx += (hx/hd)*.025; n.vy += (hy/hd)*.025; }
+      }
+      const spd = Math.hypot(n.vx, n.vy), cap = n.type==='silo'?.18 : n.type==='edge'?.10 : .55;
+      if (spd > cap) { n.vx = (n.vx/spd)*cap; n.vy = (n.vy/spd)*cap; }
+      n.x += n.vx; n.y += n.vy;
+      if (n.type === 'silo') {
+        const m = 70;
+        if (n.x < m) n.vx = Math.abs(n.vx); if (n.x > canvas.width-m) n.vx = -Math.abs(n.vx);
+        if (n.y < m) n.vy = Math.abs(n.vy); if (n.y > canvas.height-m) n.vy = -Math.abs(n.vy);
+        n.x = Math.max(m, Math.min(canvas.width-m, n.x)); n.y = Math.max(m, Math.min(canvas.height-m, n.y));
+      } else if (n.type === 'edge') {
+        if (n.x < 4) n.vx = Math.abs(n.vx)*.5; if (n.x > canvas.width-4) n.vx = -Math.abs(n.vx)*.5;
+        if (n.y < 4) n.vy = Math.abs(n.vy)*.5; if (n.y > canvas.height-4) n.vy = -Math.abs(n.vy)*.5;
+      } else {
+        if (n.x < -20) n.x = canvas.width+20; if (n.x > canvas.width+20) n.x = -20;
+        if (n.y < -20) n.y = canvas.height+20; if (n.y > canvas.height+20) n.y = -20;
+      }
+      if (n.glowT > 0) n.glowT = Math.max(0, n.glowT - .011);
+      if (n.rippleT >= 0) { n.rippleT += .016; if (n.rippleT >= 1) n.rippleT = -1; }
+    }
+
+    function draw(n) {
+      const c = n.glowColor, g = n.glowT;
+      if (n.type === 'silo') {
+        ctx.beginPath(); ctx.arc(n.x, n.y, 14, 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(${ACCENT},${.38+g*.45})`; ctx.lineWidth = 1.2; ctx.stroke();
+        if (g > 0) { ctx.beginPath(); ctx.arc(n.x, n.y, 14, 0, Math.PI*2); ctx.fillStyle = `rgba(${ACCENT},${g*.12})`; ctx.fill(); }
+        ctx.beginPath(); ctx.arc(n.x, n.y, 3, 0, Math.PI*2); ctx.fillStyle = `rgba(${ACCENT},${.70+g*.28})`; ctx.fill();
+      } else if (n.type === 'edge') {
+        ctx.beginPath(); ctx.arc(n.x, n.y, 3.5, 0, Math.PI*2); ctx.fillStyle = `rgba(${ORANGE},${.65+g*.30})`; ctx.fill();
+      } else if (n.type === 'agent') {
+        if (g > 0) { ctx.beginPath(); ctx.arc(n.x, n.y, 14+g*8, 0, Math.PI*2); ctx.fillStyle = `rgba(${BLUE},${g*.12})`; ctx.fill(); }
+        ctx.beginPath(); ctx.arc(n.x, n.y, 6, 0, Math.PI*2); ctx.fillStyle = `rgba(${BLUE},${.72+g*.25})`; ctx.fill();
+      } else {
+        if (g > 0) { ctx.beginPath(); ctx.arc(n.x, n.y, 12+g*8, 0, Math.PI*2); ctx.fillStyle = `rgba(${c},${g*.10})`; ctx.fill(); }
+        ctx.beginPath(); ctx.arc(n.x, n.y, 5, 0, Math.PI*2); ctx.fillStyle = `rgba(${c},${.62+g*.35})`; ctx.fill();
+      }
+      if (n.rippleT >= 0) {
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.rippleT*38, 0, Math.PI*2);
+        ctx.strokeStyle = `rgba(${c},${(1-n.rippleT)*.5})`; ctx.lineWidth = .8; ctx.stroke();
       }
     }
 
-    function init() { pts = Array.from({length: 55}, () => new Pt()); }
-
-    function frame() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (let i = 0; i < pts.length; i++) {
-        for (let j = i + 1; j < pts.length; j++) {
-          const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
-          const d  = Math.sqrt(dx*dx + dy*dy);
-          if (d < 130) {
-            ctx.beginPath();
-            ctx.strokeStyle = `rgba(62,255,208,${.07*(1-d/130)})`;
-            ctx.lineWidth = .5;
-            ctx.moveTo(pts[i].x, pts[i].y);
-            ctx.lineTo(pts[j].x, pts[j].y);
-            ctx.stroke();
-          }
-        }
-        pts[i].tick(); pts[i].draw();
+    function frame(now) {
+      if (!meshStarted) {
+        nextGrain=now+1000; nextCascade=now+16000+Math.random()*8000;
+        nextEdge=now+4500+Math.random()*2000; nextAgent=now+10000+Math.random()*5000;
+        meshStarted = true;
       }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      // edges: grain→silo
+      grains.forEach(g => {
+        if (!g.silo) return;
+        ctx.beginPath(); ctx.strokeStyle = `rgba(${ACCENT},${.12+g.glowT*.18})`; ctx.lineWidth = .6;
+        ctx.moveTo(g.x, g.y); ctx.lineTo(g.silo.x, g.silo.y); ctx.stroke();
+      });
+      // edges: grain→grain
+      for (let i = 0; i < grains.length; i++) for (let j = i+1; j < grains.length; j++) {
+        const d = dst(grains[i], grains[j]);
+        if (d < CD) {
+          ctx.beginPath();
+          ctx.strokeStyle = `rgba(${ACCENT},${.14*(1-d/CD)+(grains[i].glowT+grains[j].glowT)*.08})`;
+          ctx.lineWidth = .5; ctx.moveTo(grains[i].x, grains[i].y); ctx.lineTo(grains[j].x, grains[j].y); ctx.stroke();
+        }
+      }
+      // edges: edge→nearest grain
+      edgeNodes.forEach(e => {
+        const g = nearest(e, grains); if (!g) return;
+        ctx.beginPath(); ctx.strokeStyle = `rgba(${ORANGE},.10)`; ctx.lineWidth = .6;
+        ctx.moveTo(e.x, e.y); ctx.lineTo(g.x, g.y); ctx.stroke();
+      });
+      // pulses
+      pulses = pulses.filter(p => p.t < 1);
+      pulses.forEach(p => {
+        p.t = Math.min(1, p.t + p.speed);
+        const x = p.from.x + (p.to.x-p.from.x)*p.t, y = p.from.y + (p.to.y-p.from.y)*p.t;
+        ctx.beginPath(); ctx.arc(x, y, 2.2, 0, Math.PI*2); ctx.fillStyle = `rgba(${p.color},.9)`; ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI*2); ctx.fillStyle = `rgba(${p.color},.18)`; ctx.fill();
+      });
+      // tick + draw all nodes (same pattern as original pts[i].tick(); pts[i].draw();)
+      pts.forEach(n => { tickNode(n); draw(n); });
+      // events
+      if (now>=nextGrain && grains.length) { activateGrain(grains[Math.floor(Math.random()*grains.length)]); nextGrain=now+1500+Math.random()*2500; }
+      if (now>=nextCascade && silos.length) { cascadeSilo(silos[Math.floor(Math.random()*silos.length)]); nextCascade=now+12000+Math.random()*13000; }
+      if (now>=nextEdge && edgeNodes.length) { edgeTelemetry(edgeNodes[Math.floor(Math.random()*edgeNodes.length)]); nextEdge=now+3000+Math.random()*4000; }
+      if (now>=nextAgent && agents.length) { agentBurst(agents[Math.floor(Math.random()*agents.length)]); nextAgent=now+8000+Math.random()*7000; }
       requestAnimationFrame(frame);
     }
 
     window.addEventListener('resize', () => { resize(); init(); });
+    window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
     resize(); init(); frame();
 
     /* ── TYPEWRITER ── */
