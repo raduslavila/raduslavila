@@ -1,4 +1,10 @@
-## Hi there 👋
+**👋 Hello, I'm Radu.**
+---
+- 👀 I’m interested in .NET, distributed systems, cloud architectures, and basically anything with a processor.
+- 🔭 I’m currently working in including LLMs in my day-to-day necessities.
+- 🌱 And learning to collaborate more in the open-source world.
+- 💞️ If your [insert-cool-project-here] is cool enough 🧊, contact me!
+- 📫 > here: radu.slavila91@gmail.com , https://www.linkedin.com/in/radu-slavila/
 
 <!--
 **raduslavila/raduslavila** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
