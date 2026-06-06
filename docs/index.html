@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Radu Slăvilă – Senior Software Engineer. Distributed systems, Microsoft Orleans in prod, Azure/AKS, GCP, SRE mindset. Bucharest, Romania · Remote.">
+  <meta property="og:title" content="Radu Slăvilă · Senior Software Engineer">
+  <meta property="og:description" content="C#/.NET · Distributed systems & Microsoft Orleans in prod · AKS/Azure/GCP · SRE mindset · From microcontrollers to cloud.">
+  <title>Radu Slăvilă · Senior Software Engineer</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #080B12;
+      --bg-2:        #0D1119;
+      --bg-3:        #131925;
+      --border:      #192030;
+      --border-lit:  #253040;
+      --text:        #D0DDE8;
+      --text-dim:    #7D95A8;
+      --text-muted:  #3E5060;
+      --accent:      #3EFFD0;
+      --accent-glow: rgba(62,255,208,.12);
+      --orange:      #FF6240;
+      --blue:        #7B8FFF;
+      --font-d: 'Syne', sans-serif;
+      --font-b: 'IBM Plex Sans', sans-serif;
+      --font-m: 'IBM Plex Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-b);
+      font-size: 16px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: radial-gradient(circle, #1C2B3C 1px, transparent 1px);
+      background-size: 30px 30px;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      top: -30%; left: -15%;
+      width: 70%; height: 70%;
+      background: radial-gradient(ellipse, rgba(62,255,208,.035) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    #particle-canvas {
+      position: fixed; inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 2rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      padding: 1.2rem 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid transparent;
+      transition: border-color .3s, background .3s;
+    }
+    nav.scrolled { background: rgba(8,11,18,.88); border-bottom-color: var(--border); }
+
+    .nav-logo {
+      font-family: var(--font-m);
+      font-size: .8rem;
+      letter-spacing: .08em;
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .nav-logo em { color: var(--text-muted); font-style: normal; }
+
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      font-family: var(--font-m);
+      font-size: .7rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 8rem 0 5rem;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--font-m);
+      font-size: .72rem;
+      color: var(--accent);
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      margin-bottom: 1.6rem;
+      display: flex; align-items: center; gap: .75rem;
+      opacity: 0; animation: fadeUp .5s .1s ease forwards;
+    }
+    .hero-eyebrow::before { content: ''; display: inline-block; width: 1.8rem; height: 1px; background: var(--accent); }
+
+    .hero-name {
+      font-family: var(--font-d);
+      font-size: clamp(3.6rem, 10vw, 7.5rem);
+      font-weight: 800;
+      line-height: .92;
+      letter-spacing: -.025em;
+      color: #EEF4F8;
+      opacity: 0; animation: fadeUp .55s .2s ease forwards;
+    }
+    .hero-name .outline { display: block; color: transparent; -webkit-text-stroke: 1.5px rgba(238,244,248,.22); }
+
+    .hero-role-wrap {
+      margin-top: 1.6rem;
+      font-family: var(--font-m);
+      font-size: clamp(.8rem, 1.8vw, .95rem);
+      color: var(--text-dim);
+      min-height: 1.5em;
+      opacity: 0; animation: fadeUp .55s .3s ease forwards;
+    }
+    .cursor {
+      display: inline-block; width: 2px; height: 1em;
+      background: var(--accent); vertical-align: middle;
+      margin-left: 2px;
+      animation: blink 1s step-end infinite;
+    }
+
+    .status-pill {
+      display: inline-flex; align-items: center; gap: .5rem;
+      margin-top: 1.4rem;
+      padding: .35rem .9rem;
+      border: 1px solid rgba(62,255,208,.25);
+      border-radius: 2rem;
+      font-family: var(--font-m);
+      font-size: .68rem;
+      letter-spacing: .06em;
+      color: var(--accent);
+      opacity: 0; animation: fadeUp .55s .35s ease forwards;
+    }
+    .pulse-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease infinite;
+    }
+
+    .hero-bio {
+      max-width: 560px;
+      margin-top: 1.8rem;
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--text-dim);
+      line-height: 1.9;
+      opacity: 0; animation: fadeUp .55s .42s ease forwards;
+    }
+    .hero-bio strong { color: var(--text); font-weight: 500; }
+
+    .hero-cta {
+      display: flex; gap: 1rem; flex-wrap: wrap;
+      margin-top: 2.2rem;
+      opacity: 0; animation: fadeUp .55s .5s ease forwards;
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .7rem 1.4rem;
+      font-family: var(--font-m);
+      font-size: .78rem;
+      letter-spacing: .04em;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: all .2s;
+    }
+    .btn-primary { background: var(--accent); color: #080B12; font-weight: 500; }
+    .btn-primary:hover { background: #7AFFDF; transform: translateY(-2px); box-shadow: 0 10px 28px rgba(62,255,208,.22); }
+    .btn-ghost { border: 1px solid var(--border-lit); color: var(--text-dim); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+
+    .hr { border: none; border-top: 1px solid var(--border); }
+
+    .sec-label {
+      font-family: var(--font-m);
+      font-size: .68rem;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 2.8rem;
+      display: flex; align-items: center; gap: 1rem;
+    }
+    .sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); max-width: 180px; }
+
+    section { padding: 5.5rem 0; }
+
+    /* ── STACK ── */
+    .stack-h2 { font-family: var(--font-d); font-size: 1.6rem; font-weight: 700; color: #EEF4F8; margin-bottom: .6rem; }
+    .stack-sub { color: var(--text-muted); font-size: .88rem; margin-bottom: 2.2rem; }
+
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .stack-cell {
+      background: var(--bg-2);
+      padding: 1rem 1.25rem;
+      display: flex; flex-direction: column; gap: .3rem;
+      transition: background .18s;
+      cursor: default;
+    }
+    .stack-cell:hover { background: var(--bg-3); }
+    .sc-name { font-family: var(--font-m); font-size: .8rem; color: var(--text); font-weight: 500; }
+    .sc-cat { font-family: var(--font-m); font-size: .62rem; color: var(--text-muted); letter-spacing: .1em; text-transform: uppercase; }
+    .stack-cell.hi .sc-name { color: var(--accent); }
+    .stack-cell.bl .sc-name { color: var(--blue); }
+    .stack-cell.or .sc-name { color: var(--orange); }
+
+    /* ── PROJECTS ── */
+    .proj-h2 { font-family: var(--font-d); font-size: 1.6rem; font-weight: 700; color: #EEF4F8; margin-bottom: .6rem; }
+    .proj-sub { color: var(--text-muted); font-size: .88rem; margin-bottom: 2.2rem; }
+
+    .proj-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .proj-card {
+      background: var(--bg-2);
+      padding: 1.4rem 1.5rem;
+      display: flex; flex-direction: column; gap: .7rem;
+      text-decoration: none;
+      transition: background .18s;
+      position: relative;
+    }
+    .proj-card:hover { background: var(--bg-3); }
+    .proj-card:hover .proj-arrow { color: var(--accent); transform: translate(2px,-2px); }
+
+    .proj-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .proj-name {
+      font-family: var(--font-m);
+      font-size: .82rem;
+      color: var(--accent);
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .proj-name .ns { color: var(--text-muted); }
+    .proj-arrow { color: var(--text-muted); font-size: .9rem; transition: color .2s, transform .2s; flex-shrink: 0; }
+
+    .proj-desc {
+      font-size: .82rem;
+      font-weight: 300;
+      color: var(--text-dim);
+      line-height: 1.7;
+      flex: 1;
+    }
+
+    .proj-lang {
+      display: flex; align-items: center; gap: .4rem;
+      font-family: var(--font-m);
+      font-size: .65rem;
+      color: var(--text-muted);
+      letter-spacing: .06em;
+    }
+    .lang-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .lang-dot.ts { background: #3178C6; }
+
+    /* ── ABOUT ── */
+    .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4.5rem; align-items: start; }
+    .about-h2 { font-family: var(--font-d); font-size: 1.7rem; font-weight: 700; color: #EEF4F8; line-height: 1.25; margin-bottom: 1.2rem; }
+    .about-p { font-size: .93rem; font-weight: 300; color: var(--text-dim); line-height: 1.9; margin-bottom: .9rem; }
+    .about-p strong { color: var(--text); font-weight: 500; }
+    .about-p:last-child { margin-bottom: 0; }
+
+    .stat-table { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .stat-row {
+      background: var(--bg-2);
+      padding: 1.1rem 1.4rem;
+      display: flex; justify-content: space-between; align-items: baseline;
+      transition: background .18s;
+    }
+    .stat-row:hover { background: var(--bg-3); }
+    .stat-key { font-family: var(--font-m); font-size: .65rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); }
+    .stat-val { font-family: var(--font-d); font-size: 1rem; font-weight: 700; color: #EEF4F8; }
+    .stat-val.accent { color: var(--accent); }
+
+    /* ── CONNECT ── */
+    .connect-h2 { font-family: var(--font-d); font-size: 2.2rem; font-weight: 800; color: #EEF4F8; line-height: 1.1; margin-bottom: .9rem; }
+    .connect-sub { font-size: .9rem; color: var(--text-muted); margin-bottom: 2.2rem; }
+
+    .link-list {
+      display: flex; flex-direction: column;
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      max-width: 480px;
+    }
+    .link-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.1rem 1.4rem;
+      background: var(--bg-2);
+      text-decoration: none;
+      transition: background .18s, padding-left .2s;
+    }
+    .link-item:hover { background: var(--bg-3); padding-left: 1.9rem; }
+
+    .link-left { display: flex; align-items: center; gap: .9rem; }
+    .link-icon {
+      width: 34px; height: 34px; border-radius: 6px;
+      background: var(--bg-3); border: 1px solid var(--border-lit);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-m); font-size: .72rem; font-weight: 500; color: var(--text-dim);
+      flex-shrink: 0;
+    }
+    .link-name { font-family: var(--font-m); font-size: .82rem; color: var(--text); }
+    .link-url { font-family: var(--font-m); font-size: .65rem; color: var(--text-muted); }
+    .link-arrow { color: var(--text-muted); font-size: 1rem; transition: color .2s, transform .2s; }
+    .link-item:hover .link-arrow { color: var(--accent); transform: translateX(4px); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.8rem 0;
+      display: flex; justify-content: space-between; align-items: center;
+      position: relative; z-index: 2;
+    }
+    .foot-l, .foot-r { font-family: var(--font-m); font-size: .66rem; color: var(--text-muted); }
+    .foot-l span { color: var(--accent); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0;} }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(62,255,208,.4);} 50%{box-shadow:0 0 0 6px rgba(62,255,208,0);} }
+
+    .reveal { opacity:0; transform:translateY(24px); transition:opacity .65s ease, transform .65s ease; }
+    .reveal.in { opacity:1; transform:translateY(0); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 720px) {
+      nav { padding: 1rem 1.2rem; }
+      .container { padding: 0 1.2rem; }
+      .nav-links { display: none; }
+      .hero-name { font-size: clamp(3rem, 16vw, 5rem); }
+      .about-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .connect-h2 { font-size: 1.7rem; }
+      .proj-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particle-canvas"></canvas>
+
+  <nav id="nav">
+    <a href="#" class="nav-logo">rs<em>·</em>dev</a>
+    <ul class="nav-links">
+      <li><a href="#stack">Stack</a></li>
+      <li><a href="#projects">Projects</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#connect">Connect</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <!-- ── HERO ── -->
+    <div class="container">
+      <section class="hero">
+        <div class="hero-eyebrow">Bucharest, Romania · Remote</div>
+
+        <h1 class="hero-name">
+          Radu<br>
+          <span class="outline">Slăvilă</span>
+        </h1>
+
+        <div class="hero-role-wrap">
+          <span id="tw"></span><span class="cursor"></span>
+        </div>
+
+        <div class="status-pill">
+          <span class="pulse-dot"></span>
+          Sr. Engineer · SRE · Architect · Remote
+        </div>
+
+        <p class="hero-bio">
+          C#/.NET at the core. 14+ years spanning AVR microcontrollers all the way to
+          cloud-native distributed systems on Azure and GCP. <strong>Microsoft Orleans</strong> in
+          production Kubernetes clusters — as a job and a hobby.
+          SRE mindset: self-healing clusters, HPA, and close-to-zero-downtime geo-distributed failover.
+          <br>
+          <strong>- LLMs are my "juniors" now. -</strong>
+        </p>
+
+        <div class="hero-cta">
+          <a href="https://www.linkedin.com/in/radu-slavila/" target="_blank" rel="noopener" class="btn btn-primary">
+            LinkedIn
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 9.5L9.5 2.5M9.5 2.5H4.5M9.5 2.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+          <a href="https://github.com/raduslavila" target="_blank" rel="noopener" class="btn btn-ghost">
+            GitHub
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 9.5L9.5 2.5M9.5 2.5H4.5M9.5 2.5V7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <hr class="hr">
+
+    <!-- ── STACK ── -->
+    <div class="container">
+      <section id="stack">
+        <div class="sec-label reveal">Core Stack</div>
+        <p class="stack-h2 reveal">14 years of deliberate choices.</p>
+        <p class="stack-sub reveal">Right tool for the right job. Or I'll fight back.</p>
+
+        <div class="stack-grid reveal">
+          <!-- Primary strengths -->
+          <div class="stack-cell hi"><span class="sc-name">Microsoft Orleans</span><span class="sc-cat">Virtual Actors</span></div>
+          <div class="stack-cell hi"><span class="sc-name">AKS / Kubernetes</span><span class="sc-cat">Orchestration</span></div>
+          <div class="stack-cell hi"><span class="sc-name">Azure</span><span class="sc-cat">Cloud Platform</span></div>
+          <div class="stack-cell hi"><span class="sc-name">GitOps · Helm · Flux</span><span class="sc-cat">Deployment</span></div>
+          <div class="stack-cell hi"><span class="sc-name">Event-Driven Arch.</span><span class="sc-cat">Pub/Sub · EventGrid</span></div>
+          <div class="stack-cell hi"><span class="sc-name">C# / ASP.NET Core</span><span class="sc-cat">Language</span></div>
+          <!-- Secondary -->
+          <div class="stack-cell bl"><span class="sc-name">GCP / GKE</span><span class="sc-cat">Cloud Platform</span></div>
+          <div class="stack-cell bl"><span class="sc-name">HPA · Cluster Autoscaler</span><span class="sc-cat">Reliability</span></div>
+          <div class="stack-cell bl"><span class="sc-name">YARP · Ocelot</span><span class="sc-cat">API Gateway</span></div>
+          <div class="stack-cell bl"><span class="sc-name">DurableTask · SAGA</span><span class="sc-cat">Workflows</span></div>
+          <div class="stack-cell bl"><span class="sc-name">CosmosDB · Cassandra</span><span class="sc-cat">Storage Providers</span></div>
+          <div class="stack-cell bl"><span class="sc-name">Docker</span><span class="sc-cat">Dev Containers</span></div>
+            <div class="stack-cell bl"><span class="sc-name">IaC</span><span class="sc-cat">Terraform · Orchestrtion</span></div>
+
+          <!-- Neutral / supporting -->
+          <div class="stack-cell bl"><span class="sc-name">AI Development</span><span class="sc-cat">Agents · Skills · Wofklows</span></div>
+          <div class="stack-cell"><span class="sc-name">StackDriver · ES APM</span><span class="sc-cat">Observability</span></div>
+          <div class="stack-cell"><span class="sc-name">SQL Server · Redis</span><span class="sc-cat">Data</span></div>
+          <div class="stack-cell"><span class="sc-name">k6.io</span><span class="sc-cat">Load Testing</span></div>
+          <div class="stack-cell"><span class="sc-name">Blazor Server</span><span class="sc-cat">.NET UI</span></div>
+          <div class="stack-cell"><span class="sc-name">NodeRed</span><span class="sc-cat">Automation</span></div>
+          <div class="stack-cell or"><span class="sc-name">AVR · ARM · ESP8266</span><span class="sc-cat">Embedded / IoT Origins</span></div>
+        </div>
+      </section>
+    </div>
+
+    <hr class="hr">
+
+    <!-- ── PROJECTS ── -->
+    <div class="container">
+      <section id="projects">
+        <div class="sec-label reveal">Open Source</div>
+        <p class="proj-h2 reveal">The <code style="font-size:.8em;color:var(--text-muted)">Sinapsa.*</code> namespace.</p>
+        <p class="proj-sub reveal">Personal projects — mostly an excuse to run Orleans in ways the docs didn't anticipate.</p>
+
+        <div class="proj-grid reveal">
+          <a href="https://github.com/raduslavila/Sinapsa.GoL.DistOrleansProc" target="_blank" rel="noopener" class="proj-card">
+            <div class="proj-top">
+              <div class="proj-name"><span class="ns">Sinapsa.</span>GoL.DistOrleansProc</div>
+              <span class="proj-arrow">↗</span>
+            </div>
+            <p class="proj-desc">Distributed Conway's Game of Life on Microsoft Orleans 10.1 / .NET 9. Grid chunks managed by individual grains, coordinated by a cluster-singleton universe grain. Docker Compose deployable.</p>
+            <div class="proj-lang"><span class="lang-dot"></span>C#</div>
+          </a>
+
+          <a href="https://github.com/raduslavila/Sinapsa.ExpenseReport" target="_blank" rel="noopener" class="proj-card">
+            <div class="proj-top">
+              <div class="proj-name"><span class="ns">Sinapsa.</span>ExpenseReport</div>
+              <span class="proj-arrow">↗</span>
+            </div>
+            <p class="proj-desc">Family expense and contribution tracker built with Blazor Server (.NET 9) and EF Core + SQLite. Categorized entries, filters, sorting, pagination, pie and bar chart dashboard.</p>
+            <div class="proj-lang"><span class="lang-dot"></span>C#</div>
+          </a>
+
+          <a href="https://github.com/raduslavila/Sinapsa.Sudoku" target="_blank" rel="noopener" class="proj-card">
+            <div class="proj-top">
+              <div class="proj-name"><span class="ns">Sinapsa.</span>Sudoku</div>
+              <span class="proj-arrow">↗</span>
+            </div>
+            <p class="proj-desc">Ad-free, offline-first Sudoku app built with React, TypeScript, and Vite. Packaged for Android via Capacitor.</p>
+            <div class="proj-lang"><span class="lang-dot ts"></span>TypeScript</div>
+          </a>
+
+          <a href="https://github.com/raduslavila/Sinapsa.FriendlyRaffle" target="_blank" rel="noopener" class="proj-card">
+            <div class="proj-top">
+              <div class="proj-name"><span class="ns">Sinapsa.</span>FriendlyRaffle</div>
+              <span class="proj-arrow">↗</span>
+            </div>
+            <p class="proj-desc">Tombola — a friendly raffle web app with Blazor Server (.NET 8) and EF Core + SQLite. Prevents duplicates, extracts winners via a dedicated draw flow.</p>
+            <div class="proj-lang"><span class="lang-dot"></span>C#</div>
+          </a>
+
+          <a href="https://github.com/raduslavila/Sinapsa.PixelArtGenerator" target="_blank" rel="noopener" class="proj-card">
+            <div class="proj-top">
+              <div class="proj-name"><span class="ns">Sinapsa.</span>PixelArtGenerator</div>
+              <span class="proj-arrow">↗</span>
+            </div>
+            <p class="proj-desc">.NET 8 CLI that converts source images into pixel-art output for iDotMatrix LED matrix displays. Edge-aware background removal, K-means palette quantization, grid overlay.</p>
+            <div class="proj-lang"><span class="lang-dot"></span>C#</div>
+          </a>
+
+          <a href="https://github.com/raduslavila/Sinapsa.Video.ConvertorWrap.Net" target="_blank" rel="noopener" class="proj-card">
+            <div class="proj-top">
+              <div class="proj-name"><span class="ns">Sinapsa.</span>Video.ConvertorWrap.Net</div>
+              <span class="proj-arrow">↗</span>
+            </div>
+            <p class="proj-desc">.NET 8 background worker that batch-converts video using HandBrakeCLI. CPU and NVIDIA GPU encoding, 10-bit output, configurable profiles, SQLite-backed conversion log.</p>
+            <div class="proj-lang"><span class="lang-dot"></span>C#</div>
+          </a>
+        </div>
+      </section>
+    </div>
+
+    <hr class="hr">
+
+    <!-- ── ABOUT ── -->
+    <div class="container">
+      <section id="about">
+        <div class="sec-label reveal">About</div>
+        <div class="about-grid">
+          <div class="reveal">
+            <h2 class="about-h2">Engineering systems that scale without waking people up at 3 am.</h2>
+            <p class="about-p">
+              Started with microcontrollers — AVR, ARM, ESP8266, custom firmware and PCB prototypes.
+              Kept the hardware as a hobby and went all-in on cloud-native. The 14-year arc
+              from embedded to distributed systems isn't a detour; it's context that makes tradeoffs
+              obvious when others are still debating abstractions.
+            </p>
+            <p class="about-p">
+              <strong>Microsoft Orleans</strong> virtual actor framework in production Kubernetes clusters is the
+              current specialization — research, refactoring event brokers, persistence providers
+              (CosmosDB, Cassandra, Table Storage), SAGA frameworks on DurableTask, and
+              multi-region AKS maintenance with SLA-backed HPA and cluster autoscaler tuning.
+            </p>
+            <p class="about-p">
+              Casually exploring what's next: <strong>Staff / Principal Engineer</strong> or
+              <strong>SRE</strong> roles at international companies, fully remote.
+              NDA-constrained on portfolio specifics, but happy to talk architecture over a call.
+            </p>
+          </div>
+
+          <div class="stat-table reveal">
+            <div class="stat-row">
+              <span class="stat-key">Experience</span>
+              <span class="stat-val">14+ years</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Current</span>
+              <span class="stat-val">Aylo · 7 years</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Location</span>
+              <span class="stat-val">Bucharest, RO</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Availability</span>
+              <span class="stat-val accent">Remote Only</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Target Role</span>
+              <span class="stat-val">Staff · Principal · SRE</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Primary Domain</span>
+              <span class="stat-val">Distributed Systems</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Cloud</span>
+              <span class="stat-val">Azure · GCP · K8s</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-key">Education</span>
+              <span class="stat-val">MSc CS · Univ. Pitești</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <hr class="hr">
+
+    <!-- ── CONNECT ── -->
+    <div class="container">
+      <section id="connect">
+        <div class="sec-label reveal">Connect</div>
+        <h2 class="connect-h2 reveal">Let's talk<br>distributed systems.</h2>
+        <p class="connect-sub reveal">LinkedIn for conversations. GitHub for code. Both work.</p>
+
+        <div class="link-list reveal">
+          <a href="https://www.linkedin.com/in/radu-slavila/" target="_blank" rel="noopener" class="link-item">
+            <div class="link-left">
+              <div class="link-icon">in</div>
+              <div>
+                <div class="link-name">LinkedIn</div>
+                <div class="link-url">linkedin.com/in/radu-slavila</div>
+              </div>
+            </div>
+            <span class="link-arrow">→</span>
+          </a>
+          <a href="https://github.com/raduslavila" target="_blank" rel="noopener" class="link-item">
+            <div class="link-left">
+              <div class="link-icon">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.56 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+              </div>
+              <div>
+                <div class="link-name">GitHub</div>
+                <div class="link-url">github.com/raduslavila</div>
+              </div>
+            </div>
+            <span class="link-arrow">→</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="container">
+    <footer>
+      <span class="foot-l">Radu Slăvilă <span>·</span> Senior Software Engineer</span>
+      <span class="foot-r">Bucharest, Romania · 2026</span>
+    </footer>
+  </div>
+
+  <script>
+    /* ── PARTICLE NETWORK ── */
+    const canvas = document.getElementById('particle-canvas');
+    const ctx    = canvas.getContext('2d');
+    let pts = [];
+
+    function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+
+    class Pt {
+      constructor() { this.reset(true); }
+      reset(init) {
+        this.x  = Math.random() * canvas.width;
+        this.y  = init ? Math.random() * canvas.height : (Math.random() < .5 ? -4 : canvas.height + 4);
+        this.vx = (Math.random() - .5) * .22;
+        this.vy = (Math.random() - .5) * .22;
+        this.r  = Math.random() * 1.2 + .4;
+        this.a  = Math.random() * .32 + .07;
+      }
+      tick() {
+        this.x += this.vx; this.y += this.vy;
+        if (this.x < -10 || this.x > canvas.width + 10 ||
+            this.y < -10 || this.y > canvas.height + 10) this.reset(false);
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(62,255,208,${this.a})`;
+        ctx.fill();
+      }
+    }
+
+    function init() { pts = Array.from({length: 55}, () => new Pt()); }
+
+    function frame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y;
+          const d  = Math.sqrt(dx*dx + dy*dy);
+          if (d < 130) {
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(62,255,208,${.07*(1-d/130)})`;
+            ctx.lineWidth = .5;
+            ctx.moveTo(pts[i].x, pts[i].y);
+            ctx.lineTo(pts[j].x, pts[j].y);
+            ctx.stroke();
+          }
+        }
+        pts[i].tick(); pts[i].draw();
+      }
+      requestAnimationFrame(frame);
+    }
+
+    window.addEventListener('resize', () => { resize(); init(); });
+    resize(); init(); frame();
+
+    /* ── TYPEWRITER ── */
+    const roles = [
+      'Senior Software Engineer',
+      'Distributed Systems Architect',
+      'Microsoft Orleans Specialist',
+      'Cloud-Native · SRE Mindset',
+      'From Microcontrollers to Cloud',
+    ];
+    let ri = 0, ci = 0, del = false;
+    const tw = document.getElementById('tw');
+
+    function tick() {
+      const r = roles[ri];
+      if (!del) {
+        tw.textContent = r.slice(0, ++ci);
+        if (ci === r.length) { del = true; setTimeout(tick, 2400); return; }
+      } else {
+        tw.textContent = r.slice(0, --ci);
+        if (ci === 0) { del = false; ri = (ri + 1) % roles.length; }
+      }
+      setTimeout(tick, del ? 36 : 70);
+    }
+    setTimeout(tick, 900);
+
+    /* ── NAVBAR ── */
+    const nav = document.getElementById('nav');
+    window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 50), {passive:true});
+
+    /* ── SCROLL REVEAL ── */
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); obs.unobserve(e.target); } });
+    }, {threshold: .1});
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  </script>
+</body>
+</html>
